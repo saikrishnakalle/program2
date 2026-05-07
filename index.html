@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dynamic CI Trigger</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+ 
+    .card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 32px;
+      width: 100%;
+      max-width: 520px;
+    }
+ 
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+ 
+    .card-header svg { flex-shrink: 0; }
+ 
+    .card-header h1 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #f0f6fc;
+      margin: 0;
+    }
+ 
+    .card-header p {
+      font-size: 12px;
+      color: #8b949e;
+      margin: 2px 0 0;
+    }
+ 
+    .field { margin-bottom: 16px; }
+ 
+    label {
+      display: block;
+      font-size: 12px;
+      color: #8b949e;
+      margin-bottom: 6px;
+    }
+ 
+    select, input[type="text"], input[type="password"] {
+      width: 100%;
+      background: #0d1117;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      color: #e6edf3;
+      padding: 9px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+ 
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+ 
+    select:focus, input:focus {
+      border-color: #58a6ff;
+      box-shadow: 0 0 0 3px rgba(88,166,255,0.1);
+    }
+ 
+    .divider {
+      border: none;
+      border-top: 1px solid #21262d;
+      margin: 20px 0;
+    }
+ 
+    .info-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: #0d1117;
+      border-radius: 6px;
+      border-left: 3px solid #58a6ff;
+      font-size: 13px;
+      color: #8b949e;
+      line-height: 1.6;
+    }
+ 
+    .info-box strong { color: #e6edf3; }
+ 
+    .badge {
+      display: inline-block;
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      margin-left: 6px;
+      font-weight: 500;
+    }
+ 
+    button {
+      width: 100%;
+      background: #238636;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+ 
+    button:hover:not(:disabled) { background: #2ea043; }
+    button:active:not(:disabled) { transform: scale(0.98); }
+    button:disabled { background: #21262d; color: #8b949e; cursor: not-allowed; }
+ 
+    .status {
+      display: none;
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+ 
+    .status a { color: inherit; }
+ 
+    .status.success {
+      display: block;
+      background: rgba(63,185,80,0.1);
+      border: 1px solid rgba(63,185,80,0.3);
+      color: #3fb950;
+    }
+ 
+    .status.error {
+      display: block;
+      background: rgba(248,81,73,0.1);
+      border: 1px solid rgba(248,81,73,0.3);
+      color: #f85149;
+    }
+ 
+    .status.loading {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(88,166,255,0.1);
+      border: 1px solid rgba(88,166,255,0.3);
+      color: #58a6ff;
+    }
+ 
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+ 
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+<div class="card">
+ 
+  <div class="card-header">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
+         stroke="#58a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="12 6 12 12 16 14"/>
+    </svg>
+    <div>
+      <h1>Dynamic CI Trigger</h1>
+      <p>Branch selection updates test files live</p>
+    </div>
+  </div>
+ 
+  <div class="field">
+    <label>GitHub repo (owner/repo)</label>
+    <input type="text" id="repo" placeholder="username/repository-name" />
+  </div>
+ 
+  <div class="field">
+    <label>GitHub token <span style="font-size:11px;">(needs repo + actions scope)</span></label>
+    <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxx" />
+  </div>
+ 
+  <hr class="divider" />
+ 
+  <div class="field">
+    <label>Branch</label>
+    <select id="branch">
+      <option value="main">main</option>
+      <option value="dev">dev</option>
+      <option value="feature/test">feature/test</option>
+    </select>
+    <div class="info-box" id="branch-info"></div>
+  </div>
+ 
+  <div class="field">
+    <label>Program file</label>
+    <select id="program_file">
+      <option value="app.py">app.py</option>
+    </select>
+  </div>
+ 
+  <div class="field">
+    <label>
+      Test file
+      <span class="badge" id="default-badge"></span>
+    </label>
+    <select id="test_file"></select>
+  </div>
+ 
+  <button id="run-btn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="5 3 19 12 5 21 5 3"/>
+    </svg>
+    Run Workflow
+  </button>
+ 
+  <div class="status" id="status"></div>
+ 
+</div>
+ 
+<script>
+  const CONFIG = {
+    main: {
+      tests:   ["test_math.py", "test_app.py"],
+      default: "test_math.py",
+      color:   "#58a6ff",
+      desc:    "Default test: <strong>test_math.py</strong> — positive, negative &amp; zero cases."
+    },
+    dev: {
+      tests:   ["test_large.py", "test_app.py"],
+      default: "test_large.py",
+      color:   "#3fb950",
+      desc:    "Default test: <strong>test_large.py</strong> — large number stress tests."
+    },
+    "feature/test": {
+      tests:   ["test_decimal.py", "test_app.py"],
+      default: "test_decimal.py",
+      color:   "#bc8cff",
+      desc:    "Default test: <strong>test_decimal.py</strong> — decimal precision tests."
+    }
+  };
+ 
+  function updateUI() {
+    var branch = document.getElementById("branch").value;
+    var cfg    = CONFIG[branch];
+ 
+    var sel = document.getElementById("test_file");
+    sel.innerHTML = "";
+    cfg.tests.forEach(function(t) {
+      var opt = document.createElement("option");
+      opt.value = t;
+      opt.textContent = t + (t === cfg.default ? "  (default)" : "");
+      if (t === cfg.default) opt.selected = true;
+      sel.appendChild(opt);
+    });
+ 
+    var info = document.getElementById("branch-info");
+    info.style.borderLeftColor = cfg.color;
+    info.innerHTML = cfg.desc;
+ 
+    var badge = document.getElementById("default-badge");
+    badge.textContent = "auto-selected for branch";
+    badge.style.background = cfg.color + "22";
+    badge.style.color = cfg.color;
+ 
+    clearStatus();
+  }
+ 
+  document.getElementById("branch").addEventListener("change", updateUI);
+ 
+  document.getElementById("run-btn").addEventListener("click", async function() {
+    var repo   = document.getElementById("repo").value.trim();
+    var token  = document.getElementById("token").value.trim();
+    var branch = document.getElementById("branch").value;
+    var prog   = document.getElementById("program_file").value;
+    var test   = document.getElementById("test_file").value;
+ 
+    if (!repo || !token) {
+      showStatus("error", "Please enter your GitHub repo and token.");
+      return;
+    }
+ 
+    this.disabled = true;
+    showStatus("loading", "Triggering workflow...");
+ 
+    try {
+      var res = await fetch(
+        "https://api.github.com/repos/" + repo + "/actions/workflows/ci.yml/dispatches",
+        {
+          method: "POST",
+          headers: {
+            "Authorization": "Bearer " + token,
+            "Accept": "application/vnd.github+json",
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            ref: branch,
+            inputs: { branch: branch, program_file: prog, test_file: test }
+          })
+        }
+      );
+ 
+      if (res.status === 204) {
+        showStatus("success",
+          "Workflow triggered on <strong>" + branch + "</strong> with <strong>" + test + "</strong>. " +
+          "<a href='https://github.com/" + repo + "/actions' target='_blank' style='text-decoration:underline;'>View on GitHub &rarr;</a>"
+        );
+      } else {
+        var err = await res.json().catch(function() { return {}; });
+        showStatus("error", "Error " + res.status + ": " + (err.message || "Unknown error"));
+      }
+    } catch(e) {
+      showStatus("error", "Network error: " + e.message);
+    }
+ 
+    this.disabled = false;
+  });
+ 
+  function showStatus(type, msg) {
+    var s = document.getElementById("status");
+    s.className = "status " + type;
+    s.innerHTML = type === "loading"
+      ? "<div class='spinner'></div>" + msg
+      : msg;
+  }
+ 
+  function clearStatus() {
+    var s = document.getElementById("status");
+    s.className = "status";
+    s.innerHTML = "";
+  }
+ 
+  updateUI();
+</script>
+</body>
+</html>
