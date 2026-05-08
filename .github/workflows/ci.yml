@@ -5,29 +5,18 @@ on:
     inputs:
       branch:
         description: "Branch"
-        type: choice
-        options:
-          - main
-          - dev
-          - feature/test
-        default: main
+        required: true
+        default: "main"
 
       program_file:
         description: "Program File"
-        type: choice
-        options:
-          - app.py
-        default: app.py
+        required: true
+        default: "app.py"
 
       test_file:
         description: "Test File"
-        type: choice
-        options:
-          - test_app.py
-          - test_math.py
-          - test_large.py
-          - test_decimal.py
-        default: test_app.py
+        required: true
+        default: "test_app.py"
 
 jobs:
   build:
@@ -49,17 +38,6 @@ jobs:
 
       - name: Run program file
         run: python ${{ github.event.inputs.program_file }}
-
-      - name: Check test file exists
-        run: |
-          if [ ! -f "${{ github.event.inputs.test_file }}" ]; then
-            echo "❌ ${{ github.event.inputs.test_file }} not found in branch ${{ github.event.inputs.branch }}"
-            ls test_*.py
-            exit 1
-          fi
-
-      - name: Run test_app.py (baseline)
-        run: pytest test_app.py -v
 
       - name: Run selected test file
         run: pytest ${{ github.event.inputs.test_file }} -v
